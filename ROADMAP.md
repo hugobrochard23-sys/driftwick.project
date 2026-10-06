@@ -72,11 +72,12 @@
 - [x] Partage (Web Share API) si le navigateur le permet, sinon téléchargement PNG seul.
 - Vérifié visuellement (`analysis/p8_mode_photo.png`) et par script (bascule, curseur, filtre, taille d'image composite non triviale, restauration de l'état de pause à la sortie).
 
-## P9 — Polish et optimisation mobile
+## P9 — Polish et optimisation mobile (fait, dans la limite du mesurable sans téléphone réel)
 
-- Profilage sur téléphone réel (voir gabarits de test dans `play-store.project/cold-impact.project`).
-- Fusion des maillages par îlot si le nombre de cellules le justifie (voir `GAME_DESIGN.md` §5).
-- Passage des matériaux en `FrontSide` une fois la géométrie stabilisée.
+- [x] Matériaux passés en `FrontSide` (étaient en `DoubleSide` de sécurité) — vérifié par capture d'écran avant/après : aucune face manquante.
+- [x] Mesure de performance réelle (`tools/perf.js`) : 300/2000/5000 cellules, temps de construction, temps de rendu, appels de dessin, triangles — voir le tableau dans `GAME_DESIGN.md` §5.
+- [x] Décision documentée, appuyée sur les chiffres : la fusion de maillages par îlot n'est **pas** faite, parce qu'elle ne se justifie pas encore (rendu < 3ms à 2000 cellules, bien au-delà d'une session de jeu réaliste).
+- Non fait, hors de portée sans l'appareil physique : profilage sur un téléphone réel (seul Chrome desktop headless était disponible dans cette session) — le seuil documenté dans `GAME_DESIGN.md` §5 indique quand y revenir.
 
 ## Connu, à ne pas réapprendre
 

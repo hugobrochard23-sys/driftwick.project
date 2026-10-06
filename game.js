@@ -275,7 +275,12 @@
     // Accroche de test : pilotée par tools/smoke.js (headless), sans dépendre de requestAnimationFrame
     // ni d'événements DOM simulés pour vérifier la logique — leçon reprise de l'ancien labo.jeux
     // (rAF gelé dans certains navigateurs embarqués en mode caché).
-    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED, dayNight, applyDayNight, hud };
+    window.DW_TEST = {
+      world, orbit, camera, screenToCell, render, WORLD_SEED, dayNight, applyDayNight, hud,
+      // P9 : expose les statistiques de rendu pour tools/perf.js (appels de dessin, triangles) —
+      // sans ça, impossible de mesurer honnêtement le coût d'un maillage par cellule.
+      rendererInfo: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+    };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

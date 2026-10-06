@@ -1,7 +1,10 @@
 /* Palette Driftwick : archipel au crépuscule, pierre rosée et bois flotté, eau profonde à reflets
  * chauds. Choix volontairement éloignés du bleu/blanc froid de référence du genre (voir
- * analysis/GAME_DESIGN.md, section direction artistique). DoubleSide tant que le sens des faces
- * n'est pas optimisé (voir note dans buildCellGeometry.js) — à resserrer en FrontSide en P2+. */
+ * analysis/GAME_DESIGN.md, section direction artistique). FrontSide (P9) : les normales de
+ * buildCellGeometry.js sont calculées par produit vectoriel avec un ordre de sommets cohérent
+ * (jamais devinées à la main), donc le sens des faces est fiable — DoubleSide ne servait plus
+ * que de filet de sécurité pendant que la géométrie bougeait encore. Vérifié par capture d'écran
+ * avant/après : aucune face manquante, moitié moins de fragments à ombrer sur mobile. */
 (function (global) {
   function createPalette(THREE) {
     return {
@@ -12,7 +15,7 @@
         color: new THREE.Color('#e3a98b'),
         roughness: 0.9,
         metalness: 0.0,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       }),
       // emissive à 0 pour l'instant (P2) : le cycle jour/nuit de P4 fera varier emissiveIntensity
       // pour simuler une fenêtre allumée au crépuscule, sans changer la géométrie ni ce matériau.
@@ -21,18 +24,18 @@
         emissive: new THREE.Color('#ffcf7a'),
         emissiveIntensity: 0,
         roughness: 0.4,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       }),
       door: new THREE.MeshStandardMaterial({
         color: new THREE.Color('#5b3a29'),
         roughness: 0.85,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       }),
       // Bois flotté : ponts et quais (P3) — plus clair que la porte, légèrement grisé par l'eau.
       wood: new THREE.MeshStandardMaterial({
         color: new THREE.Color('#9c7a5c'),
         roughness: 0.8,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       }),
       // Lanterne (P4) : emissiveIntensity à 0 le jour, montée par game.js selon `nightFactor`.
       lantern: new THREE.MeshStandardMaterial({
@@ -40,7 +43,7 @@
         emissive: new THREE.Color('#ffb24d'),
         emissiveIntensity: 0,
         roughness: 0.5,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
       }),
       // Végétation stylisée sur les toits-terrasses (P4) — un seul vert, pas de variation de teinte
       // pour l'instant (suffisant pour la silhouette recherchée, voir GAME_DESIGN.md §4).

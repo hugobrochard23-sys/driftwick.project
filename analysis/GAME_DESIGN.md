@@ -99,13 +99,30 @@ pipeline (séparation du moteur de génération et du rendu demandée en §15 du
 
 - Stockage creux (`Map`), aucune allocation pour les cellules vides.
 - Recalcul strictement local (cellule éditée + 4 voisines) — jamais un rebuild de la ville entière.
-- Un `Mesh` THREE.js par cellule actuellement (simple, correct, suffisant jusqu'à quelques
-  centaines de cellules) ; fusion en un `BufferGeometry` par îlot prévue si le profilage sur
-  mobile réel (P9) montre que le nombre de draw calls devient le goulot, pas avant — évite
-  l'optimisation prématurée sur une hypothèse non vérifiée.
-- Matériaux en `DoubleSide` pendant le prototypage (évite les faces invisibles par erreur de sens
-  des sommets) ; passage en `FrontSide` documenté comme optimisation différée une fois la
-  géométrie stabilisée.
+- Matériaux passés en `FrontSide` en P9 (étaient en `DoubleSide` pendant le prototypage, le temps
+  que le sens des faces se stabilise) : les normales de `buildCellGeometry.js` sont calculées par
+  produit vectoriel avec un ordre de sommets cohérent, jamais devinées à la main, donc fiables.
+  Vérifié par capture d'écran avant/après le changement : aucune face manquante.
+- **Mesure réelle (P9, `tools/perf.js`, Chrome desktop)**, caméra effectivement cadrée sur la
+  construction (sans ça le frustum culling de THREE.js fausse la mesure — piège rencontré en
+  écrivant le script) :
+
+  | Cellules | Construction | Rendu/image | Draw calls | Triangles |
+  |---|---|---|---|---|
+  | 300 (session réaliste) | 8 ms | 0,52 ms | 586 | 2 778 |
+  | 2 000 | 47 ms | 2,86 ms | 3 226 | 18 038 |
+  | 5 000 (cas extrême) | 135 ms | 8,99 ms | 7 609 | 44 180 |
+
+  Un `Mesh` THREE.js par cellule (jusqu'à 6 par cellule : structure, fenêtres, porte, quai,
+  lanterne, végétation) reste largement confortable pour une session de jeu réaliste (quelques
+  centaines de cellules). La fusion en un seul `BufferGeometry` par îlot — évoquée comme
+  optimisation conditionnelle depuis le début (§2, §17 du brief : "si le nombre de cellules le
+  justifie") — **n'est pas faite**, parce que les chiffres ci-dessus montrent qu'elle ne se justifie
+  pas encore : à 2 000 cellules (bien au-delà d'une ville construite à la main), le rendu prend
+  moins de 3 ms, un budget confortable même sur un appareil mobile modeste à 60 im/s (16,6 ms).
+  Seuil à surveiller si un profilage sur téléphone réel (pas seulement Chrome desktop) montre un
+  goulot : au-delà d'environ 3 000 à 5 000 cellules actives, où le nombre d'appels de dessin
+  commence à peser sur le pilote graphique mobile plus que sur le GPU lui-même.
 
 ## 6. Choix technologique
 
