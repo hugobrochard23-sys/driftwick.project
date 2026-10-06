@@ -57,10 +57,22 @@
       return { cx: Math.floor(hit.x), cz: Math.floor(hit.z) };
     }
 
+    // Son + haptique (P6) : le contexte audio ne peut démarrer que depuis un vrai geste utilisateur
+    // (politique des navigateurs) — jamais pendant la génération programmatique de l'archipel.
+    function wake() { DW.Audio.init(); DW.Audio.startAmbience(); }
+
     let hud = null;
     DW.Gestures.attach(canvas, {
-      onTap(x, y) { hud.dismissHint(); const c = screenToCell(x, y); if (c) world.build(c.cx, c.cz); },
-      onLongPress(x, y) { hud.dismissHint(); const c = screenToCell(x, y); if (c) world.demolish(c.cx, c.cz); },
+      onTap(x, y) {
+        wake(); hud.dismissHint();
+        const c = screenToCell(x, y);
+        if (c) { world.build(c.cx, c.cz); DW.Audio.playBuild(); DW.Haptics.tick('build'); }
+      },
+      onLongPress(x, y) {
+        wake(); hud.dismissHint();
+        const c = screenToCell(x, y);
+        if (c) { world.demolish(c.cx, c.cz); DW.Audio.playDemolish(); DW.Haptics.tick('demolish'); }
+      },
       onDragOrbit(dx, dy) { hud.dismissHint(); orbit.orbit(-dx * 0.006, -dy * 0.006); },
       onPan(dx, dy) { orbit.pan(-dx, dy); },
       onZoom(factor) { hud.dismissHint(); orbit.zoom(factor); },
@@ -86,6 +98,10 @@
         document.getElementById('hud-photo').textContent = photoMode ? '✕' : '📷';
       },
     });
+    DW.Audio.setEnabled(hud.settings.sound);
+    DW.Haptics.setEnabled(hud.settings.vibration);
+    document.getElementById('hud-sound').addEventListener('change', (e) => DW.Audio.setEnabled(e.target.checked));
+    document.getElementById('hud-vibration').addEventListener('change', (e) => DW.Haptics.setEnabled(e.target.checked));
 
     // Cycle jour/nuit (P4) : un tour complet dure CYCLE_SECONDS, démarre au crépuscule (identité
     // visuelle par défaut du jeu, voir src/rendering/dayNight.js). `paused` et `dayNight.t` sont
@@ -115,6 +131,7 @@
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       if (!dayNight.paused) { dayNight.t += dt / CYCLE_SECONDS; applyDayNight(); }
+      world.update(now);
       render();
       requestAnimationFrame(tick);
     }

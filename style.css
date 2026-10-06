@@ -28,4 +28,8 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
   background: rgba(20, 15, 10, 0.75); color: #fff6ea; border-radius: 12px; padding: 14px;
   display: flex; flex-direction: column; gap: 10px; font-size: 15px; min-width: 180px;
 }
+/* Spécificité : [hidden] (10) < #hud-panel (100) < #hud-panel[hidden] (110) — sans cette dernière
+   règle, le `display: flex` ci-dessus écrase le masquage natif de l'attribut `hidden` (bug trouvé
+   par capture d'écran : le panneau restait affiché en permanence, voir ROADMAP.md). */
+#hud-panel[hidden] { display: none; }
 #hud-panel button { padding: 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: inherit; }

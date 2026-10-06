@@ -4,6 +4,10 @@
  * l'instant (structure, fenêtres, porte, quai) ; fusion en un seul BufferGeometry par îlot prévue
  * en P9 si le nombre de cellules le justifie (voir analysis/GAME_DESIGN.md §5). */
 (function (global) {
+  const POP_MS = 220; // durée de l'animation d'apparition (P6 : la construction "sort de l'eau")
+  const POP_DROP = 1.4; // de combien une cellule démarre enfoncée avant de remonter à sa place
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+
   class World {
     constructor(THREE, scene, materials) {
       this.THREE = THREE;
@@ -12,6 +16,7 @@
       this.grid = new DW.Grid();
       this.meshes = new Map(); // key -> { structure, windows, door, dock, lantern, vegetation } (plusieurs peuvent être null)
       this._bushGeometry = null; // géométrie partagée (primitive THREE simple) : un seul buffer pour tous les buissons
+      this._anims = new Map(); // key -> { start, parts: [{mesh, finalY}] } — animations de pose en cours
     }
 
     _key(cx, cz) { return cx + ',' + cz; }
@@ -24,10 +29,29 @@
       }
     }
 
+    // Enregistre une animation "sort de l'eau" pour les meshes non nuls d'une cellule tout juste
+    // (re)construite : on ne touche qu'à position.y (jamais à l'échelle, puisque la géométrie
+    // encode déjà des coordonnées absolues — un scale désaxerait tout, voir buildCellGeometry.js).
+    _popIn(key, meshes) {
+      const parts = meshes.filter(Boolean).map((mesh) => ({ mesh, finalY: mesh.position.y }));
+      for (const p of parts) p.mesh.position.y = p.finalY - POP_DROP;
+      this._anims.set(key, { start: performance.now(), parts });
+    }
+
+    update(now) {
+      for (const [key, anim] of this._anims) {
+        const t = Math.min(1, (now - anim.start) / POP_MS);
+        const e = easeOutCubic(t);
+        for (const p of anim.parts) p.mesh.position.y = p.finalY - POP_DROP * (1 - e);
+        if (t >= 1) this._anims.delete(key);
+      }
+    }
+
     _rebuildCell(cx, cz) {
       const key = this._key(cx, cz);
       const old = this.meshes.get(key);
       if (old) { this._disposeEntry(old); this.meshes.delete(key); }
+      this._anims.delete(key);
       const desc = DW.Mesher.cellDescriptor(this.grid, cx, cz);
       if (!desc) return;
       const T = this.THREE, G = DW.Geometry;
@@ -35,7 +59,9 @@
       if (desc.kind === 'bridge') {
         const structure = new T.Mesh(G.buildBridgeGeometry(T, desc), this.materials.wood);
         this.scene.add(structure);
-        this.meshes.set(key, { structure, windows: null, door: null, dock: null, lantern: null, vegetation: null });
+        const entry = { structure, windows: null, door: null, dock: null, lantern: null, vegetation: null };
+        this.meshes.set(key, entry);
+        this._popIn(key, [structure]);
         return;
       }
 
@@ -62,7 +88,9 @@
         this.scene.add(vegetation);
       }
 
-      this.meshes.set(key, { structure, windows, door, dock, lantern, vegetation });
+      const entry = { structure, windows, door, dock, lantern, vegetation };
+      this.meshes.set(key, entry);
+      this._popIn(key, [structure, windows, door, dock, lantern, vegetation]);
     }
 
     _touch(cx, cz) {
@@ -77,6 +105,7 @@
     clear() {
       for (const entry of this.meshes.values()) this._disposeEntry(entry);
       this.meshes.clear();
+      this._anims.clear();
       this.grid = new DW.Grid();
     }
 

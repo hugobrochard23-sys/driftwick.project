@@ -27,8 +27,9 @@ function assert(cond, msg) { if (!cond) throw new Error('FAIL: ' + msg); console
 
   await page.goto(URL, { waitUntil: 'load' });
   await page.waitForFunction('window.DW_TEST && window.DW_TEST.world', { timeout: 5000 });
-
-  await page.evaluate(() => window.DW_TEST.render());
+  // Laisse la vraie boucle de jeu (requestAnimationFrame) tourner le temps que l'animation de pose
+  // (P6, ~220ms) se termine, plutôt que de figer un rendu en plein milieu de l'animation.
+  await new Promise((r) => setTimeout(r, 400));
   await page.screenshot({ path: path.join(__dirname, '..', 'analysis', 'smoke_screenshot_initial.png') });
 
   const initial = await page.evaluate(() => {

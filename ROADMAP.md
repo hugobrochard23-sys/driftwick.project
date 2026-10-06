@@ -46,10 +46,14 @@
 - [x] "Recommencer" régénère le même archipel de départ (même graine) plutôt que de le vider — vérifié (`world.clear()` + régénération).
 - Mode photo : bouton câblé (masque l'indice et les réglages) mais comportement complet réservé à P8.
 
-## P6 — Animations, audio, haptique
+## P6 — Animations, audio, haptique (fait)
 
-- Petite animation + son à la pose/démolition, vibration légère.
-- Ambiance sonore évolutive (vent, eau, cloches lointaines).
+- [x] Animation de pose : chaque cellule (re)construite "sort de l'eau" (position.y animée, jamais l'échelle — voir note ci-dessous), ~220ms, `World.update(now)` appelé depuis la boucle de jeu.
+- [x] Sons synthétisés (Web Audio, aucun fichier) : un bip montant à la construction, un bip descendant à la démolition (`src/audio/audio.js`).
+- [x] Ambiance : bruit filtré en boucle très bas volume, démarre au premier vrai geste (politique des navigateurs).
+- [x] Vibration légère (Android/Chrome ; iPhone/Safari l'ignore silencieusement, cohérent avec la limite déjà notée pour Cold Impact).
+- [x] Réglages son/vibration du panneau P5 effectivement branchés (`DW.Audio.setEnabled`, `DW.Haptics.setEnabled`).
+- Démolition : pas d'animation de sortie (le mesh est retiré immédiatement) — simplification assumée, voir note plus bas.
 
 ## P7 — Sauvegarde
 
@@ -87,3 +91,14 @@
   entre deux rives = exactement la même signature que le milieu d'une rangée de maisons). Le local
   seul ne suffit pas à trancher : il faut un indice posé une fois par ailleurs (ici, `grid.isWater`,
   rempli par la génération de terrain) plutôt que d'essayer de deviner depuis les seuls voisins.
+- Animer une construction dont la géométrie encode des coordonnées **absolues** (notre cas, voir
+  `buildCellGeometry.js`) ne peut pas passer par `mesh.scale` : ça grossirait depuis l'origine du
+  monde (0,0,0), pas depuis la cellule. Seule une translation (`position.y`) reste valide sans
+  réécrire la géométrie en coordonnées locales.
+- Spécificité CSS : `#hud-panel { display: flex }` (sélecteur ID, spécificité 100) écrase le
+  masquage natif de l'attribut `[hidden]` (spécificité ~10) — le panneau restait affiché en
+  permanence malgré `hidden` posé en HTML. Toujours ajouter une règle `#id[hidden] { display: none }`
+  explicite dès qu'un élément togglé par `hidden` reçoit aussi un `display` en CSS. Trouvé par
+  capture d'écran (le panneau apparaissait dans une capture qui ne devait pas l'ouvrir) — un rappel
+  que "ça a l'air bon sur la capture qu'on attendait" ne suffit pas, il faut vérifier l'état qu'on
+  n'attendait PAS de voir.
