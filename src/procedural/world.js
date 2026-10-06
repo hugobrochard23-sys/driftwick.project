@@ -17,6 +17,13 @@
       this.meshes = new Map(); // key -> { structure, windows, door, dock, lantern, vegetation } (plusieurs peuvent être null)
       this._bushGeometry = null; // géométrie partagée (primitive THREE simple) : un seul buffer pour tous les buissons
       this._anims = new Map(); // key -> { start, parts: [{mesh, finalY}] } — animations de pose en cours
+      // Point d'accroche unique pour l'autosauvegarde (P7) : appelé à chaque build()/demolish(),
+      // y compris pendant la génération programmatique de l'archipel — jamais oublié parce que
+      // c'est le seul chemin par lequel la grille change, plutôt qu'un appel ajouté à chaque site
+      // d'appel de build()/demolish() dans game.js (facile à oublier, trouvé en testant : un test
+      // qui appelait world.build() directement, en court-circuitant le geste, ne déclenchait aucune
+      // sauvegarde — la grille changeait mais rien n'écoutait ce changement-là).
+      this.onEdit = null;
     }
 
     _key(cx, cz) { return cx + ',' + cz; }
@@ -97,8 +104,8 @@
       for (const [x, z] of this.grid.cellsTouching(cx, cz)) this._rebuildCell(x, z);
     }
 
-    build(cx, cz) { this.grid.raise(cx, cz); this._touch(cx, cz); }
-    demolish(cx, cz) { this.grid.lower(cx, cz); this._touch(cx, cz); }
+    build(cx, cz) { this.grid.raise(cx, cz); this._touch(cx, cz); if (this.onEdit) this.onEdit(); }
+    demolish(cx, cz) { this.grid.lower(cx, cz); this._touch(cx, cz); if (this.onEdit) this.onEdit(); }
 
     // Repart d'un monde vide (P5 : bouton "Recommencer"). Local et réversible côté joueur au sens
     // où regénérer l'archipel (même graine) redonne exactement le même résultat.
@@ -107,6 +114,33 @@
       this.meshes.clear();
       this._anims.clear();
       this.grid = new DW.Grid();
+    }
+
+    // Reconstruit tous les maillages à partir de l'état courant de `this.grid` (après un chargement
+    // externe qui a rempli la grille directement, sans passer par build()/demolish()).
+    _rebuildAll() {
+      for (const key of this.grid.heights.keys()) {
+        const [cx, cz] = key.split(',').map(Number);
+        this._rebuildCell(cx, cz);
+      }
+    }
+
+    // P7 : charge un monde nommé depuis localStorage (null si inexistant). Retourne la graine
+    // enregistrée, ou null si rien à charger (le site appelant doit alors générer un monde neuf).
+    loadFromStore(name) {
+      this.clear();
+      const seed = DW.Save.loadWorld(name, this.grid);
+      if (seed === null) return null;
+      this._rebuildAll();
+      return seed;
+    }
+
+    // P7 : charge un monde depuis un JSON importé par le joueur (export d'une autre session).
+    loadFromJSON(json) {
+      this.clear();
+      const seed = DW.Save.importWorld(this.grid, json);
+      this._rebuildAll();
+      return seed;
     }
 
     get cellCount() { return this.grid.size; }

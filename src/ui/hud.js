@@ -16,7 +16,7 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) { /* tant pis, pas bloquant */ }
   }
 
-  function init({ onReset, onPhotoToggle }) {
+  function init({ onReset, onPhotoToggle, onNewWorld, onSwitchWorld, onExport, onImport }) {
     const settings = loadSettings();
     const hint = document.getElementById('hud-hint');
     const panel = document.getElementById('hud-panel');
@@ -24,6 +24,8 @@
     const photoBtn = document.getElementById('hud-photo');
     const soundBox = document.getElementById('hud-sound');
     const vibrationBox = document.getElementById('hud-vibration');
+    const worldSelect = document.getElementById('hud-world-select');
+    const importFile = document.getElementById('hud-import-file');
 
     soundBox.checked = settings.sound;
     vibrationBox.checked = settings.vibration;
@@ -36,6 +38,17 @@
     }
     if (settings.seenHint) hint.classList.add('hud-hidden');
 
+    // Rafraîchit la liste déroulante des mondes (appelé par game.js après chaque changement).
+    function refreshWorldList(current, names) {
+      worldSelect.innerHTML = '';
+      for (const name of names) {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        if (name === current) opt.selected = true;
+        worldSelect.appendChild(opt);
+      }
+    }
+
     settingsBtn.addEventListener('click', () => { panel.hidden = !panel.hidden; });
     document.getElementById('hud-close').addEventListener('click', () => { panel.hidden = true; });
     soundBox.addEventListener('change', () => { settings.sound = soundBox.checked; saveSettings(settings); });
@@ -45,8 +58,20 @@
       if (onReset) onReset();
     });
     photoBtn.addEventListener('click', () => { if (onPhotoToggle) onPhotoToggle(); });
+    worldSelect.addEventListener('change', () => { if (onSwitchWorld) onSwitchWorld(worldSelect.value); });
+    document.getElementById('hud-world-new').addEventListener('click', () => { if (onNewWorld) onNewWorld(); });
+    document.getElementById('hud-export').addEventListener('click', () => { if (onExport) onExport(); });
+    document.getElementById('hud-import').addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', () => {
+      const file = importFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { if (onImport) onImport(String(reader.result)); };
+      reader.readAsText(file);
+      importFile.value = '';
+    });
 
-    return { settings, dismissHint };
+    return { settings, dismissHint, refreshWorldList };
   }
 
   const ns = (global.DW = global.DW || {});

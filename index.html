@@ -17,6 +17,11 @@
   <div id="hud-panel" hidden>
     <label><input type="checkbox" id="hud-sound"> Son</label>
     <label><input type="checkbox" id="hud-vibration"> Vibration</label>
+    <select id="hud-world-select"></select>
+    <button id="hud-world-new">Nouveau monde</button>
+    <button id="hud-export">Exporter ce monde</button>
+    <button id="hud-import">Importer un monde</button>
+    <input type="file" id="hud-import-file" accept="application/json" hidden>
     <button id="hud-reset">Recommencer ce monde</button>
     <button id="hud-close">Fermer</button>
   </div>
@@ -34,6 +39,7 @@
 <script src="src/input/haptics.js"></script>
 <script src="src/audio/audio.js"></script>
 <script src="src/procedural/islands.js"></script>
+<script src="src/save/save.js"></script>
 <script src="src/procedural/world.js"></script>
 <script src="src/ui/hud.js"></script>
 <script src="game.js"></script>

@@ -55,10 +55,13 @@
 - [x] Réglages son/vibration du panneau P5 effectivement branchés (`DW.Audio.setEnabled`, `DW.Haptics.setEnabled`).
 - Démolition : pas d'animation de sortie (le mesh est retiré immédiatement) — simplification assumée, voir note plus bas.
 
-## P7 — Sauvegarde
+## P7 — Sauvegarde (fait)
 
-- Sauvegarde automatique en `localStorage`, plusieurs mondes nommés.
-- Export/import d'une construction (JSON de la grille).
+- [x] Sérialisation grille + eau (`src/save/save.js`, pur et testable), round-trip vérifié (3 tests).
+- [x] Autosauvegarde automatique : `World.onEdit` se déclenche à chaque `build()`/`demolish()`, quel que soit l'appelant (geste réel, régénération d'archipel, reset) — un seul point d'accroche, jamais oublié.
+- [x] Plusieurs mondes nommés : "Nouveau monde" (nomme, graine aléatoire, nouvel archipel), liste déroulante pour changer de monde, chacun gardant sa propre graine et sa propre grille.
+- [x] Export (téléchargement JSON) / import (lecture de fichier) d'un monde complet.
+- [x] Persistance vérifiée en conditions réelles : construction → attente de l'autosave → rechargement de la page → monde identique retrouvé (cellule construite comprise).
 
 ## P8 — Mode photo
 
@@ -102,3 +105,10 @@
   capture d'écran (le panneau apparaissait dans une capture qui ne devait pas l'ouvrir) — un rappel
   que "ça a l'air bon sur la capture qu'on attendait" ne suffit pas, il faut vérifier l'état qu'on
   n'attendait PAS de voir.
+- Brancher un effet de bord (ici : la sauvegarde) sur le point d'entrée visible (le geste du
+  joueur, `onTap`/`onLongPress`) plutôt que sur l'opération de données elle-même (`World.build`)
+  est fragile : un test — ou une future fonctionnalité — qui appelle `world.build()` directement
+  (génération d'archipel, import, script de debug) contourne silencieusement l'effet attendu.
+  Trouvé en testant la persistance : `world.build()` appelé hors geste ne déclenchait aucune
+  sauvegarde. Corrigé en déplaçant l'accroche dans `World` lui-même (`onEdit`), au plus près de
+  la donnée qui change, pas au plus près du geste qui l'a provoquée.

@@ -61,6 +61,25 @@
     // (politique des navigateurs) — jamais pendant la génération programmatique de l'archipel.
     function wake() { DW.Audio.init(); DW.Audio.startAmbience(); }
 
+    // Sauvegarde (P7) : un monde édité se sauvegarde tout seul (debounce 800ms), sous le nom
+    // courant. `currentWorldName`/`currentSeed` suivent le monde affiché à l'écran.
+    const WORLD_SEED = 20261006;
+    let currentWorldName = DW.Save.DEFAULT_NAME;
+    let currentSeed = WORLD_SEED;
+    let saveTimer = null;
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => DW.Save.saveWorld(currentWorldName, world.grid, currentSeed), 800);
+    }
+    function refreshWorldList() {
+      const { names } = DW.Save.listWorlds();
+      hud.refreshWorldList(currentWorldName, names);
+    }
+    // Point d'accroche unique (voir le commentaire sur World.onEdit) : posé avant tout appel à
+    // generateWorld()/build(), pour que même la génération initiale de l'archipel déclenche
+    // l'autosauvegarde — pas seulement les tap/appui long du joueur.
+    world.onEdit = scheduleSave;
+
     let hud = null;
     DW.Gestures.attach(canvas, {
       onTap(x, y) {
@@ -79,29 +98,72 @@
     });
 
     // Archipel de départ (P3) : plusieurs îlots déterministes plutôt qu'une seule étendue continue.
-    const WORLD_SEED = 20261006;
-    function generateWorld() {
-      const landCells = DW.Islands.generateArchipelago(WORLD_SEED);
+    function generateWorld(seed) {
+      const landCells = DW.Islands.generateArchipelago(seed);
       for (const [x, z] of landCells) world.build(x, z);
       DW.Islands.markSurroundingWater(world.grid, landCells, 3);
     }
-    generateWorld();
 
-    // Interface minimale (P5) : indice de premier lancement, réglages, recommencer.
+    // Reprend le dernier monde ouvert s'il existe ; sinon génère l'archipel de départ et le
+    // sauvegarde tout de suite sous son nom par défaut (section 13 du brief : sauvegarde automatique).
+    const existing = DW.Save.listWorlds();
+    if (existing.current) {
+      const loadedSeed = world.loadFromStore(existing.current);
+      if (loadedSeed !== null) { currentWorldName = existing.current; currentSeed = loadedSeed; }
+      else { generateWorld(WORLD_SEED); DW.Save.saveWorld(currentWorldName, world.grid, currentSeed); }
+    } else {
+      generateWorld(WORLD_SEED);
+      DW.Save.saveWorld(currentWorldName, world.grid, currentSeed);
+    }
+
+    // Interface minimale (P5) : indice de premier lancement, réglages, recommencer, mondes (P7).
     let photoMode = false;
     hud = DW.HUD.init({
-      onReset() { world.clear(); generateWorld(); },
+      onReset() { world.clear(); generateWorld(currentSeed); scheduleSave(); },
       onPhotoToggle() {
         photoMode = !photoMode;
         document.getElementById('hud-hint').hidden = photoMode;
         document.getElementById('hud-settings').hidden = photoMode;
         document.getElementById('hud-photo').textContent = photoMode ? '✕' : '📷';
       },
+      onNewWorld() {
+        const base = window.prompt('Nom du nouveau monde :', 'Nouvelle île');
+        if (!base) return;
+        currentWorldName = DW.Save.uniqueName(base);
+        currentSeed = Date.now() ^ Math.floor(Math.random() * 1e9);
+        world.clear();
+        generateWorld(currentSeed);
+        DW.Save.saveWorld(currentWorldName, world.grid, currentSeed);
+        refreshWorldList();
+      },
+      onSwitchWorld(name) {
+        const seed = world.loadFromStore(name);
+        if (seed !== null) { currentWorldName = name; currentSeed = seed; }
+      },
+      onExport() {
+        const json = DW.Save.exportWorld(world.grid, currentSeed);
+        const blob = new Blob([json], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = currentWorldName.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.driftwick.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      },
+      onImport(json) {
+        try {
+          const seed = world.loadFromJSON(json);
+          currentWorldName = DW.Save.uniqueName('Monde importé');
+          currentSeed = seed;
+          DW.Save.saveWorld(currentWorldName, world.grid, currentSeed);
+          refreshWorldList();
+        } catch (e) { window.alert('Fichier illisible : ce n’est pas une sauvegarde Driftwick valide.'); }
+      },
     });
     DW.Audio.setEnabled(hud.settings.sound);
     DW.Haptics.setEnabled(hud.settings.vibration);
     document.getElementById('hud-sound').addEventListener('change', (e) => DW.Audio.setEnabled(e.target.checked));
     document.getElementById('hud-vibration').addEventListener('change', (e) => DW.Haptics.setEnabled(e.target.checked));
+    refreshWorldList();
 
     // Cycle jour/nuit (P4) : un tour complet dure CYCLE_SECONDS, démarre au crépuscule (identité
     // visuelle par défaut du jeu, voir src/rendering/dayNight.js). `paused` et `dayNight.t` sont
