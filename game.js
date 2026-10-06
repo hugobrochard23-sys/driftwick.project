@@ -57,19 +57,35 @@
       return { cx: Math.floor(hit.x), cz: Math.floor(hit.z) };
     }
 
+    let hud = null;
     DW.Gestures.attach(canvas, {
-      onTap(x, y) { const c = screenToCell(x, y); if (c) world.build(c.cx, c.cz); },
-      onLongPress(x, y) { const c = screenToCell(x, y); if (c) world.demolish(c.cx, c.cz); },
-      onDragOrbit(dx, dy) { orbit.orbit(-dx * 0.006, -dy * 0.006); },
+      onTap(x, y) { hud.dismissHint(); const c = screenToCell(x, y); if (c) world.build(c.cx, c.cz); },
+      onLongPress(x, y) { hud.dismissHint(); const c = screenToCell(x, y); if (c) world.demolish(c.cx, c.cz); },
+      onDragOrbit(dx, dy) { hud.dismissHint(); orbit.orbit(-dx * 0.006, -dy * 0.006); },
       onPan(dx, dy) { orbit.pan(-dx, dy); },
-      onZoom(factor) { orbit.zoom(factor); },
+      onZoom(factor) { hud.dismissHint(); orbit.zoom(factor); },
     });
 
     // Archipel de départ (P3) : plusieurs îlots déterministes plutôt qu'une seule étendue continue.
     const WORLD_SEED = 20261006;
-    const landCells = DW.Islands.generateArchipelago(WORLD_SEED);
-    for (const [x, z] of landCells) world.build(x, z);
-    DW.Islands.markSurroundingWater(world.grid, landCells, 3);
+    function generateWorld() {
+      const landCells = DW.Islands.generateArchipelago(WORLD_SEED);
+      for (const [x, z] of landCells) world.build(x, z);
+      DW.Islands.markSurroundingWater(world.grid, landCells, 3);
+    }
+    generateWorld();
+
+    // Interface minimale (P5) : indice de premier lancement, réglages, recommencer.
+    let photoMode = false;
+    hud = DW.HUD.init({
+      onReset() { world.clear(); generateWorld(); },
+      onPhotoToggle() {
+        photoMode = !photoMode;
+        document.getElementById('hud-hint').hidden = photoMode;
+        document.getElementById('hud-settings').hidden = photoMode;
+        document.getElementById('hud-photo').textContent = photoMode ? '✕' : '📷';
+      },
+    });
 
     // Cycle jour/nuit (P4) : un tour complet dure CYCLE_SECONDS, démarre au crépuscule (identité
     // visuelle par défaut du jeu, voir src/rendering/dayNight.js). `paused` et `dayNight.t` sont
@@ -107,7 +123,7 @@
     // Accroche de test : pilotée par tools/smoke.js (headless), sans dépendre de requestAnimationFrame
     // ni d'événements DOM simulés pour vérifier la logique — leçon reprise de l'ancien labo.jeux
     // (rAF gelé dans certains navigateurs embarqués en mode caché).
-    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED, dayNight, applyDayNight };
+    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED, dayNight, applyDayNight, hud };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

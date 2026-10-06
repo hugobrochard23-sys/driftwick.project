@@ -72,6 +72,14 @@
     build(cx, cz) { this.grid.raise(cx, cz); this._touch(cx, cz); }
     demolish(cx, cz) { this.grid.lower(cx, cz); this._touch(cx, cz); }
 
+    // Repart d'un monde vide (P5 : bouton "Recommencer"). Local et réversible côté joueur au sens
+    // où regénérer l'archipel (même graine) redonne exactement le même résultat.
+    clear() {
+      for (const entry of this.meshes.values()) this._disposeEntry(entry);
+      this.meshes.clear();
+      this.grid = new DW.Grid();
+    }
+
     get cellCount() { return this.grid.size; }
     get meshCount() { return this.meshes.size; }
   }

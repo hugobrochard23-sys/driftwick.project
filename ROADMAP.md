@@ -38,10 +38,13 @@
 - Non fait : variations de couleur par îlot (un seul jeu de teintes pour l'instant) — reporté, pas
   jugé prioritaire tant que le nombre d'îlots reste petit.
 
-## P5 — UX mobile
+## P5 — UX mobile (fait)
 
-- Interface minimale (aucun bouton sauf un réglage et le mode photo).
-- Premier lancement : aucun tutoriel long, le geste de construction s'apprend en un tap.
+- [x] Deux icônes seulement (réglages, mode photo), zones tactiles ≥44px, zones de sécurité `env(safe-area-inset-*)`.
+- [x] Indice d'une ligne au premier lancement, disparaît dès la première interaction et pour toujours ensuite (`localStorage`).
+- [x] Panneau réglages minimal : son, vibration, recommencer ce monde — rien d'autre.
+- [x] "Recommencer" régénère le même archipel de départ (même graine) plutôt que de le vider — vérifié (`world.clear()` + régénération).
+- Mode photo : bouton câblé (masque l'indice et les réglages) mais comportement complet réservé à P8.
 
 ## P6 — Animations, audio, haptique
 

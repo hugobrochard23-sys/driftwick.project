@@ -10,6 +10,18 @@
 <body>
 <canvas id="scene"></canvas>
 
+<div id="hud">
+  <button id="hud-settings" class="hud-icon-btn" aria-label="Réglages">⚙</button>
+  <button id="hud-photo" class="hud-icon-btn" aria-label="Mode photo">📷</button>
+  <p id="hud-hint">Touchez pour construire · glissez pour tourner · pincez pour zoomer</p>
+  <div id="hud-panel" hidden>
+    <label><input type="checkbox" id="hud-sound"> Son</label>
+    <label><input type="checkbox" id="hud-vibration"> Vibration</label>
+    <button id="hud-reset">Recommencer ce monde</button>
+    <button id="hud-close">Fermer</button>
+  </div>
+</div>
+
 <script src="assets/lib/three.min.js"></script>
 <script src="src/core/grid.js"></script>
 <script src="src/topology/mesher.js"></script>
@@ -21,6 +33,7 @@
 <script src="src/input/gestures.js"></script>
 <script src="src/procedural/islands.js"></script>
 <script src="src/procedural/world.js"></script>
+<script src="src/ui/hud.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
