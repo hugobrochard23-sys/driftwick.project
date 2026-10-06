@@ -138,6 +138,20 @@
     return geo;
   }
 
+  // Lanterne : un petit panneau émissif au-dessus de la porte (P4 : s'allume la nuit, voir
+  // src/rendering/dayNight.js — ce fichier ne fait que la poser, l'intensité lumineuse est pilotée
+  // par game.js via le matériau partagé `materials.lantern`, pas par la géométrie).
+  function buildLanternGeometry(THREE, descriptor) {
+    if (!descriptor.doorSide) return null;
+    const positions = [], normals = [], indices = [];
+    inset(positions, normals, indices, descriptor.doorSide, descriptor.cx, descriptor.cz, 0.95, 1.1, 0.46, 0.54, -0.05);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geo.setIndex(indices);
+    return geo;
+  }
+
   // Fenêtres : une par étage au-dessus du rez-de-chaussée de chaque mur plein (pas sur les murs en
   // marches, qui restent lisibles comme un escalier plutôt qu'une façade). Un mur d'un seul niveau
   // (rez-de-chaussée uniquement) n'en reçoit aucune — cohérent avec une porte qui suffit à elle seule.
@@ -207,5 +221,5 @@
   }
 
   const ns = (global.DW = global.DW || {});
-  ns.Geometry = { buildCellGeometry, buildDoorGeometry, buildWindowsGeometry, buildBridgeGeometry, buildDockGeometry };
+  ns.Geometry = { buildCellGeometry, buildDoorGeometry, buildWindowsGeometry, buildLanternGeometry, buildBridgeGeometry, buildDockGeometry };
 })(window);

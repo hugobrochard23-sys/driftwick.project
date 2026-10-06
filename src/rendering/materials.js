@@ -34,6 +34,20 @@
         roughness: 0.8,
         side: THREE.DoubleSide,
       }),
+      // Lanterne (P4) : emissiveIntensity à 0 le jour, montée par game.js selon `nightFactor`.
+      lantern: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#ffe9b8'),
+        emissive: new THREE.Color('#ffb24d'),
+        emissiveIntensity: 0,
+        roughness: 0.5,
+        side: THREE.DoubleSide,
+      }),
+      // Végétation stylisée sur les toits-terrasses (P4) — un seul vert, pas de variation de teinte
+      // pour l'instant (suffisant pour la silhouette recherchée, voir GAME_DESIGN.md §4).
+      vegetation: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#5c7a4a'),
+        roughness: 0.95,
+      }),
       sun: new THREE.Color('#ffd9a0'),
       ambient: new THREE.Color('#6a7fa8'),
     };

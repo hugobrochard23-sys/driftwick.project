@@ -27,7 +27,10 @@
     scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
     const waterGeo = new THREE.PlaneGeometry(400, 400);
-    const waterMat = new THREE.MeshStandardMaterial({ color: palette.water, roughness: 0.35, metalness: 0.1 });
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: palette.water, roughness: 0.35, metalness: 0.1,
+      emissive: new THREE.Color('#2ad6c9'), emissiveIntensity: 0,
+    });
     const water = new THREE.Mesh(waterGeo, waterMat);
     water.rotation.x = -Math.PI / 2;
     water.position.y = -0.05;
@@ -68,14 +71,43 @@
     for (const [x, z] of landCells) world.build(x, z);
     DW.Islands.markSurroundingWater(world.grid, landCells, 3);
 
+    // Cycle jour/nuit (P4) : un tour complet dure CYCLE_SECONDS, démarre au crépuscule (identité
+    // visuelle par défaut du jeu, voir src/rendering/dayNight.js). `paused` et `dayNight.t` sont
+    // exposés dans DW_TEST pour que le mode photo (P8) puisse figer/choisir l'heure plus tard.
+    const CYCLE_SECONDS = 240;
+    const dayNight = { t: 0.55, paused: false };
+    const tmpColor = new THREE.Color();
+    function setColorRGB(c, rgb) { c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255); }
+
+    function applyDayNight() {
+      const s = DW.DayNight.compute(dayNight.t);
+      setColorRGB(scene.background, s.sky);
+      setColorRGB(scene.fog.color, s.fog);
+      setColorRGB(sunLight.color, s.sun);
+      sunLight.intensity = s.sunIntensity;
+      hemi.intensity = s.hemiIntensity;
+      palette.window.emissiveIntensity = s.nightFactor;
+      palette.lantern.emissiveIntensity = s.nightFactor * 1.4;
+      waterMat.emissiveIntensity = s.nightFactor * 0.5;
+    }
+    applyDayNight();
+
     function render() { renderer.render(scene, camera); }
-    function tick() { render(); requestAnimationFrame(tick); }
+    let lastFrame = performance.now();
+    function tick() {
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastFrame) / 1000);
+      lastFrame = now;
+      if (!dayNight.paused) { dayNight.t += dt / CYCLE_SECONDS; applyDayNight(); }
+      render();
+      requestAnimationFrame(tick);
+    }
     requestAnimationFrame(tick);
 
     // Accroche de test : pilotée par tools/smoke.js (headless), sans dépendre de requestAnimationFrame
     // ni d'événements DOM simulés pour vérifier la logique — leçon reprise de l'ancien labo.jeux
     // (rAF gelé dans certains navigateurs embarqués en mode caché).
-    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED };
+    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED, dayNight, applyDayNight };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

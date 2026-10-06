@@ -27,11 +27,16 @@
 - [x] Quai automatique : tout mur de rez-de-chaussée d'un bâtiment d'un seul étage donnant sur du vide reçoit un ponton (`buildDockGeometry`) — vérifié visuellement (`analysis/p3_pont_et_quais.png`).
 - [x] 4 tests unitaires du générateur d'îlots + 3 tests de détection de pont (dont la non-régression "rangée de maisons ≠ pont").
 
-## P4 — Direction artistique complète
+## P4 — Direction artistique complète (fait)
 
-- Lanternes qui s'allument au crépuscule, cycle jour/nuit léger.
-- Végétation stylisée (quelques variantes, placement contextuel).
-- Matériaux et variations de couleur par îlot (évite la monotonie visuelle à grande échelle).
+- [x] Cycle jour/nuit (`src/rendering/dayNight.js`, pur et testable) : aube/jour/crépuscule/tombée de nuit/nuit, interpolation cyclique, le crépuscule reste l'identité par défaut.
+- [x] Lanternes au-dessus de chaque porte, intensité émissive pilotée par `nightFactor` — un seul matériau partagé, une seule affectation par image pour toutes les lanternes.
+- [x] Fenêtres qui s'allument la nuit (même mécanisme, matériau déjà posé en P2).
+- [x] Eau légèrement bioluminescente la nuit (emissive sur le matériau de l'eau, piloté par `nightFactor`).
+- [x] Végétation stylisée sur les toits plats (placement déterministe par hachage, `src/decoration/placement.js`), jamais sur un toit à deux pans.
+- [x] 7 tests unitaires supplémentaires (cycle jour/nuit, hachage de placement), vérifié visuellement aux trois moments du cycle (`analysis/p4_cycle_jour_nuit.png`).
+- Non fait : variations de couleur par îlot (un seul jeu de teintes pour l'instant) — reporté, pas
+  jugé prioritaire tant que le nombre d'îlots reste petit.
 
 ## P5 — UX mobile
 
