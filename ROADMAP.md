@@ -11,13 +11,13 @@
 - [x] 12 tests unitaires purs (Node, sans navigateur) du moteur procédural (`tests/topology.test.js`).
 - [x] Test d'intégration headless (Chrome via Puppeteer) : gestes réels, captures d'écran (`tools/smoke.js`).
 
-## P2 — Génération automatique de bâtiments plus riche
+## P2 — Génération automatique de bâtiments plus riche (fait)
 
-- Toits variés (plat / une pente / deux pentes) choisis selon la silhouette locale.
-- Fenêtres et portes placées automatiquement sur les murs visibles (densité selon la hauteur).
-- Escaliers extérieurs et balcons quand une marche de hauteur le permet.
-- Extension optionnelle "modèle de coins" si le modèle par cellule montre ses limites (voir
-  `GAME_DESIGN.md` §2).
+- [x] Toit à deux pans (hip simplifié, faîtage selon X) si la cellule dépasse ses 4 voisins (pic isolé), toit plat sinon.
+- [x] Porte automatique sur le premier mur au sol (`doorSide`), fenêtres automatiques par étage au-dessus (`src/geometry/buildCellGeometry.js`).
+- [x] Murs "en marches" (escalier extérieur) quand un mur repose sur un voisin plus bas de 1-2 niveaux (`stepped`).
+- Extension optionnelle "modèle de coins" (arches, silhouettes non rectangulaires) non faite — le
+  modèle par cellule suffit pour l'instant (voir `GAME_DESIGN.md` §2).
 
 ## P3 — Plusieurs îles, eau, quais, ponts
 
@@ -67,3 +67,9 @@
   paraîtra toujours plus sombre et désaturée que son code hexadécimal brut (le ciel, non éclairé
   via `scene.background`, reste lui exact). Normal, pas un bug — en tenir compte en choisissant
   les couleurs de matériaux plutôt que de chercher à reproduire le hex exact à l'écran.
+- Un panneau décoratif (porte, fenêtre) "en retrait" sur un mur sans épaisseur doit être décalé
+  **vers l'extérieur** (`d` négatif), jamais vers l'intérieur : un décalage positif le place
+  géométriquement derrière le mur, qui le masque entièrement au test de profondeur — invisible de
+  face bien que présent dans la scène (bug trouvé par capture d'écran rapprochée, voir
+  `src/geometry/buildCellGeometry.js`, fonction `inset`). Toujours vérifier une nouvelle géométrie
+  décorative par une capture cadrée pile en face, pas seulement par le nombre de sommets.

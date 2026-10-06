@@ -14,6 +14,20 @@
         metalness: 0.0,
         side: THREE.DoubleSide,
       }),
+      // emissive à 0 pour l'instant (P2) : le cycle jour/nuit de P4 fera varier emissiveIntensity
+      // pour simuler une fenêtre allumée au crépuscule, sans changer la géométrie ni ce matériau.
+      window: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#fff1c2'),
+        emissive: new THREE.Color('#ffcf7a'),
+        emissiveIntensity: 0,
+        roughness: 0.4,
+        side: THREE.DoubleSide,
+      }),
+      door: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#5b3a29'),
+        roughness: 0.85,
+        side: THREE.DoubleSide,
+      }),
       sun: new THREE.Color('#ffd9a0'),
       ambient: new THREE.Color('#6a7fa8'),
     };

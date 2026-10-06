@@ -30,7 +30,7 @@
     water.position.y = -0.05;
     scene.add(water);
 
-    const world = new DW.World(THREE, scene, palette.building);
+    const world = new DW.World(THREE, scene, palette);
 
     function resize() {
       const w = window.innerWidth, h = window.innerHeight;

@@ -20,13 +20,40 @@ function wallSides(desc) {
   return desc.walls.map((w) => w.side).sort().join('');
 }
 
-test('cellule isolée : 4 murs, toit', () => {
+test('cellule isolée : 4 murs, toit, pic (toit à deux pans), porte au sol', () => {
   const g = new Grid();
   g.set(0, 0, 1);
   const d = cellDescriptor(g, 0, 0);
   assert.strictEqual(d.height, 1);
   assert.strictEqual(wallSides(d), 'ensw');
   assert.strictEqual(d.roof, true);
+  assert.strictEqual(d.roofType, 'hip');
+  assert.strictEqual(d.doorSide, 'n'); // premier côté dans l'ordre N,S,E,W, déterministe
+  assert.ok(d.walls.every((w) => w.grounded && !w.stepped));
+});
+
+test('grande construction plate : toit plat (pas un pic isolé)', () => {
+  const g = new Grid();
+  const N = 10;
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) g.set(x, z, 1);
+  assert.strictEqual(cellDescriptor(g, 5, 5).roofType, 'flat'); // intérieur : voisins à la même hauteur
+  assert.strictEqual(cellDescriptor(g, 0, 0).roofType, 'flat'); // bord : au moins un voisin intérieur à la même hauteur
+});
+
+test('mur posé sur un voisin plus bas (mais pas au sol) : en marches si l’écart est petit', () => {
+  const g = new Grid();
+  g.set(0, 0, 1); g.set(1, 0, 3); // voisin w de (1,0) à 1, écart de 2 → en escalier
+  const d = cellDescriptor(g, 1, 0);
+  const w = d.walls.find((x) => x.side === 'w');
+  assert.ok(w && !w.grounded && w.stepped);
+  assert.strictEqual(d.roofType, 'hip'); // tous les voisins sont plus bas : pic isolé malgré l'escalier sur un côté
+});
+
+test('écart trop grand entre voisins : mur plein, pas de marches', () => {
+  const g = new Grid();
+  g.set(0, 0, 1); g.set(1, 0, 5); // écart de 4 > STEP_MAX_SPAN
+  const w = cellDescriptor(g, 1, 0).walls.find((x) => x.side === 'w');
+  assert.ok(w && !w.grounded && !w.stepped);
 });
 
 test('cellule vide : pas de descripteur', () => {
