@@ -19,11 +19,13 @@
 - Extension optionnelle "modèle de coins" (arches, silhouettes non rectangulaires) non faite — le
   modèle par cellule suffit pour l'instant (voir `GAME_DESIGN.md` §2).
 
-## P3 — Plusieurs îles, eau, quais, ponts
+## P3 — Plusieurs îles, eau, quais, ponts (fait)
 
-- Plusieurs masses d'eau / îles dans un même monde.
-- Ponts automatiques entre deux rives proches.
-- Quais et pontons en bordure d'eau.
+- [x] Archipel de départ déterministe, 3 îlots organiques (`src/procedural/islands.js`, accrétion aléatoire seedée).
+- [x] Eau marquée explicitement (`grid.markWater`) pour distinguer "vraie eau" de "pas encore construit" — nécessaire à la détection de pont (voir "Connu" ci-dessous).
+- [x] Pont automatique : une case vide entre deux rives, avec de l'eau marquée perpendiculairement, devient un tablier de bois + garde-corps au lieu d'un bâtiment (`buildBridgeGeometry`).
+- [x] Quai automatique : tout mur de rez-de-chaussée d'un bâtiment d'un seul étage donnant sur du vide reçoit un ponton (`buildDockGeometry`) — vérifié visuellement (`analysis/p3_pont_et_quais.png`).
+- [x] 4 tests unitaires du générateur d'îlots + 3 tests de détection de pont (dont la non-régression "rangée de maisons ≠ pont").
 
 ## P4 — Direction artistique complète
 
@@ -73,3 +75,7 @@
   face bien que présent dans la scène (bug trouvé par capture d'écran rapprochée, voir
   `src/geometry/buildCellGeometry.js`, fonction `inset`). Toujours vérifier une nouvelle géométrie
   décorative par une capture cadrée pile en face, pas seulement par le nombre de sommets.
+- Deux configurations de voisinage peuvent être géométriquement identiques en local (une case vide
+  entre deux rives = exactement la même signature que le milieu d'une rangée de maisons). Le local
+  seul ne suffit pas à trancher : il faut un indice posé une fois par ailleurs (ici, `grid.isWater`,
+  rempli par la génération de terrain) plutôt que d'essayer de deviner depuis les seuls voisins.

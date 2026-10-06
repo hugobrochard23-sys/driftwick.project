@@ -61,6 +61,31 @@ test('cellule vide : pas de descripteur', () => {
   assert.strictEqual(cellDescriptor(g, 5, 5), null);
 });
 
+test('rangée de 3 maisons accolées : reste des bâtiments, PAS des ponts (sans eau marquée)', () => {
+  const g = new Grid();
+  g.set(0, 0, 1); g.set(1, 0, 1); g.set(2, 0, 1);
+  const mid = cellDescriptor(g, 1, 0);
+  assert.strictEqual(mid.kind, 'building'); // même signature de voisinage qu'un pont, mais pas d'eau marquée
+});
+
+test('pont : cellule vide entre deux rives, avec de l’eau marquée sur les côtés perpendiculaires', () => {
+  const g = new Grid();
+  g.set(0, 0, 1); g.set(2, 0, 1); // deux rives sur l'axe est-ouest
+  g.markWater(1, -1); g.markWater(1, 1); // les côtés perpendiculaires (nord/sud) sont de l'eau
+  g.set(1, 0, 1); // le joueur construit sur la case du milieu
+  const d = cellDescriptor(g, 1, 0);
+  assert.strictEqual(d.kind, 'bridge');
+  assert.strictEqual(d.axis, 'ew');
+});
+
+test('pas de pont si un seul côté perpendiculaire est de l’eau', () => {
+  const g = new Grid();
+  g.set(0, 0, 1); g.set(2, 0, 1);
+  g.markWater(1, -1); // un seul côté marqué
+  g.set(1, 0, 1);
+  assert.strictEqual(cellDescriptor(g, 1, 0).kind, 'building');
+});
+
 test('deux cellules adjacentes même hauteur : le mur partagé disparaît', () => {
   const g = new Grid();
   g.set(0, 0, 1);

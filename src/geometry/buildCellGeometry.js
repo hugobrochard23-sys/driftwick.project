@@ -158,6 +158,54 @@
     return geo;
   }
 
+  const DECK_Y = 0.15, RAIL_TOP = 0.45;
+
+  // Pont : un tablier plat au ras de l'eau + deux garde-corps sur les côtés ouverts (perpendiculaires
+  // à l'axe de traversée). `axis` vient du mesher (P3 : détection de pont entre deux rives).
+  function buildBridgeGeometry(THREE, descriptor) {
+    const { cx, cz, axis } = descriptor;
+    const positions = [], normals = [], indices = [];
+    addQuad(positions, normals, indices, [cx, DECK_Y, cz + 1], [cx + 1, DECK_Y, cz + 1], [cx + 1, DECK_Y, cz], [cx, DECK_Y, cz]);
+    if (axis === 'ns') {
+      addQuad(positions, normals, indices, [cx, DECK_Y, cz], [cx, DECK_Y, cz + 1], [cx, RAIL_TOP, cz + 1], [cx, RAIL_TOP, cz]);
+      addQuad(positions, normals, indices, [cx + 1, DECK_Y, cz + 1], [cx + 1, DECK_Y, cz], [cx + 1, RAIL_TOP, cz], [cx + 1, RAIL_TOP, cz + 1]);
+    } else {
+      addQuad(positions, normals, indices, [cx, DECK_Y, cz], [cx + 1, DECK_Y, cz], [cx + 1, RAIL_TOP, cz], [cx, RAIL_TOP, cz]);
+      addQuad(positions, normals, indices, [cx + 1, DECK_Y, cz + 1], [cx, DECK_Y, cz + 1], [cx, RAIL_TOP, cz + 1], [cx + 1, RAIL_TOP, cz + 1]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geo.setIndex(indices);
+    return geo;
+  }
+
+  // Quai : un ponton qui prolonge d'une case chaque mur de rez-de-chaussée d'un bâtiment d'un seul
+  // étage donnant sur l'eau (voisin à 0 — dans ce modèle, l'eau et le terrain non construit ne se
+  // distinguent pas localement, donc un cottage posé en bord de n'importe quel vide reçoit son
+  // ponton ; cohérent avec un monde très majoritairement constitué d'eau autour des îles). Réservé
+  // aux bâtiments bas : un immeuble de plusieurs étages n'a pas vocation à avoir un ponton.
+  function buildDockGeometry(THREE, descriptor) {
+    if (descriptor.kind !== 'building' || descriptor.height !== 1) return null;
+    const positions = [], normals = [], indices = [];
+    const { cx, cz, walls } = descriptor;
+    for (const w of walls) {
+      if (!w.grounded) continue;
+      const y = 0.05;
+      addQuad(
+        positions, normals, indices,
+        sidePos(w.side, cx, cz, 0, 0, y), sidePos(w.side, cx, cz, 1, 0, y),
+        sidePos(w.side, cx, cz, 1, -1, y), sidePos(w.side, cx, cz, 0, -1, y)
+      );
+    }
+    if (!positions.length) return null;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geo.setIndex(indices);
+    return geo;
+  }
+
   const ns = (global.DW = global.DW || {});
-  ns.Geometry = { buildCellGeometry, buildDoorGeometry, buildWindowsGeometry };
+  ns.Geometry = { buildCellGeometry, buildDoorGeometry, buildWindowsGeometry, buildBridgeGeometry, buildDockGeometry };
 })(window);

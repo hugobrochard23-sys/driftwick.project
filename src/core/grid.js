@@ -7,11 +7,19 @@
   class Grid {
     constructor() {
       this.heights = new Map();
+      // Cellules explicitement marquées "eau" par la génération de terrain (src/procedural/islands.js).
+      // Sert uniquement à distinguer "une vraie étendue d'eau" d'une simple case vide pas encore
+      // construite, pour que la détection de pont (src/topology/mesher.js) ne confonde pas un pont
+      // avec le milieu d'une rangée de maisons accolées — mêmes voisins, sens différent.
+      this.water = new Set();
     }
 
     static key(cx, cz) {
       return cx + ',' + cz;
     }
+
+    markWater(cx, cz) { this.water.add(Grid.key(cx, cz)); }
+    isWater(cx, cz) { return this.water.has(Grid.key(cx, cz)); }
 
     get(cx, cz) {
       return this.heights.get(Grid.key(cx, cz)) || 0;

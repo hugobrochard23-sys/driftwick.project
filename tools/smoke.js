@@ -31,21 +31,21 @@ function assert(cond, msg) { if (!cond) throw new Error('FAIL: ' + msg); console
   await page.evaluate(() => window.DW_TEST.render());
   await page.screenshot({ path: path.join(__dirname, '..', 'analysis', 'smoke_screenshot_initial.png') });
 
-  const initial = await page.evaluate(() => ({
-    cells: window.DW_TEST.world.cellCount,
-    meshes: window.DW_TEST.world.meshCount,
-  }));
-  assert(initial.cells === 5, `5 cellules distinctes de départ (obtenu ${initial.cells})`);
-  assert(initial.meshes === 5, `5 maillages affichés au départ (obtenu ${initial.meshes})`);
+  const initial = await page.evaluate(() => {
+    const expected = window.DW.Islands.generateArchipelago(window.DW_TEST.WORLD_SEED).length;
+    return { cells: window.DW_TEST.world.cellCount, meshes: window.DW_TEST.world.meshCount, expected };
+  });
+  assert(initial.cells === initial.expected, `archipel déterministe : ${initial.expected} cellules attendues (obtenu ${initial.cells})`);
+  assert(initial.meshes === initial.expected, `autant de maillages que de cellules (obtenu ${initial.meshes})`);
 
-  // Tap sur une cellule vide connue de la caméra de départ (via l'API directe, le raycast est testé séparément ci-dessous)
-  await page.evaluate(() => window.DW_TEST.world.build(5, 5));
+  // Construction/démolition directe sur une case connue vide (loin de tout îlot généré)
+  await page.evaluate(() => window.DW_TEST.world.build(300, 300));
   const afterBuild = await page.evaluate(() => window.DW_TEST.world.cellCount);
-  assert(afterBuild === 6, `construction directe : 6 cellules (obtenu ${afterBuild})`);
+  assert(afterBuild === initial.cells + 1, `construction directe : +1 cellule (obtenu ${afterBuild})`);
 
-  await page.evaluate(() => window.DW_TEST.world.demolish(5, 5));
+  await page.evaluate(() => window.DW_TEST.world.demolish(300, 300));
   const afterDemolish = await page.evaluate(() => window.DW_TEST.world.cellCount);
-  assert(afterDemolish === 5, `démolition directe : retour à 5 cellules (obtenu ${afterDemolish})`);
+  assert(afterDemolish === initial.cells, `démolition directe : retour à ${initial.cells} cellules (obtenu ${afterDemolish})`);
 
   // Geste réel (souris CDP) : glisser doit faire tourner la caméra (yaw change)
   const yawBefore = await page.evaluate(() => window.DW_TEST.orbit.yaw);
@@ -57,10 +57,16 @@ function assert(cond, msg) { if (!cond) throw new Error('FAIL: ' + msg); console
   const yawAfter = await page.evaluate(() => window.DW_TEST.orbit.yaw);
   assert(Math.abs(yawAfter - yawBefore) > 0.01, `le glissé fait tourner la caméra (${yawBefore.toFixed(3)} -> ${yawAfter.toFixed(3)})`);
 
-  // Geste réel : tap bref (sans mouvement) sur une case vide doit construire
-  const beforeTap = await page.evaluate(() => window.DW_TEST.world.cellCount);
+  // Geste réel : tap bref (sans mouvement) sur une case vide doit construire. La case visée par le
+  // raycast peut être une île déjà construite (vue d'ensemble de l'archipel) : on la vide d'abord
+  // pour tester uniquement le mécanisme tap -> construction, pas le terrain qui s'y trouve.
   const hit = await page.evaluate(() => window.DW_TEST.screenToCell(500, 500));
   assert(hit && typeof hit.cx === 'number', 'le raycast écran -> cellule renvoie une case valide');
+  await page.evaluate(({ cx, cz }) => {
+    const w = window.DW_TEST.world;
+    while (w.grid.get(cx, cz) > 0) w.demolish(cx, cz);
+  }, hit);
+  const beforeTap = await page.evaluate(() => window.DW_TEST.world.cellCount);
   await page.mouse.move(500, 500);
   await page.mouse.down();
   await page.mouse.up();

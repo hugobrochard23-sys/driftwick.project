@@ -1,7 +1,8 @@
 /* Relie la grille (données), l'analyse de voisinage et la géométrie à la scène THREE.js.
  * Recalcul local uniquement : éditer une cellule ne reconstruit que son maillage et celui de ses
- * 4 voisines directes (section 14 — jamais toute la ville). Un maillage par cellule pour l'instant ;
- * fusion en un seul BufferGeometry par îlot prévue en P2+ si le nombre de cellules le justifie. */
+ * 4 voisines directes (section 14 — jamais toute la ville). Plusieurs maillages par cellule pour
+ * l'instant (structure, fenêtres, porte, quai) ; fusion en un seul BufferGeometry par îlot prévue
+ * en P9 si le nombre de cellules le justifie (voir analysis/GAME_DESIGN.md §5). */
 (function (global) {
   class World {
     constructor(THREE, scene, materials) {
@@ -15,7 +16,7 @@
     _key(cx, cz) { return cx + ',' + cz; }
 
     _disposeEntry(entry) {
-      for (const mesh of [entry.structure, entry.windows, entry.door]) {
+      for (const mesh of [entry.structure, entry.windows, entry.door, entry.dock]) {
         if (!mesh) continue;
         this.scene.remove(mesh);
         mesh.geometry.dispose();
@@ -29,6 +30,14 @@
       const desc = DW.Mesher.cellDescriptor(this.grid, cx, cz);
       if (!desc) return;
       const T = this.THREE, G = DW.Geometry;
+
+      if (desc.kind === 'bridge') {
+        const structure = new T.Mesh(G.buildBridgeGeometry(T, desc), this.materials.wood);
+        this.scene.add(structure);
+        this.meshes.set(key, { structure, windows: null, door: null, dock: null });
+        return;
+      }
+
       const structure = new T.Mesh(G.buildCellGeometry(T, desc), this.materials.building);
       this.scene.add(structure);
       const winGeo = G.buildWindowsGeometry(T, desc);
@@ -37,7 +46,10 @@
       const doorGeo = G.buildDoorGeometry(T, desc);
       const door = doorGeo ? new T.Mesh(doorGeo, this.materials.door) : null;
       if (door) this.scene.add(door);
-      this.meshes.set(key, { structure, windows, door });
+      const dockGeo = G.buildDockGeometry(T, desc);
+      const dock = dockGeo ? new T.Mesh(dockGeo, this.materials.wood) : null;
+      if (dock) this.scene.add(dock);
+      this.meshes.set(key, { structure, windows, door, dock });
     }
 
     _touch(cx, cz) {

@@ -28,6 +28,12 @@
         roughness: 0.85,
         side: THREE.DoubleSide,
       }),
+      // Bois flotté : ponts et quais (P3) — plus clair que la porte, légèrement grisé par l'eau.
+      wood: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#9c7a5c'),
+        roughness: 0.8,
+        side: THREE.DoubleSide,
+      }),
       sun: new THREE.Color('#ffd9a0'),
       ambient: new THREE.Color('#6a7fa8'),
     };

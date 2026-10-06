@@ -14,7 +14,10 @@
     scene.fog = new THREE.Fog(palette.fog, 30, 90);
 
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
-    const orbit = new DW.OrbitCamera(camera, { x: 0.5, y: 0, z: 0.5 });
+    const orbit = new DW.OrbitCamera(camera, { x: 4, y: 0, z: -2 });
+    orbit.distance = 34;
+    orbit.pitch = 0.5;
+    orbit._apply();
 
     const hemi = new THREE.HemisphereLight(palette.sun, palette.ambient, 1.6);
     scene.add(hemi);
@@ -59,9 +62,11 @@
       onZoom(factor) { orbit.zoom(factor); },
     });
 
-    // Quelques cellules de départ pour qu'un village existe dès l'ouverture.
-    for (const [x, z] of [[0, 0], [1, 0], [0, 1], [2, 0], [2, 1]]) world.build(x, z);
-    world.build(1, 0); // second étage sur une cellule pour vérifier la silhouette
+    // Archipel de départ (P3) : plusieurs îlots déterministes plutôt qu'une seule étendue continue.
+    const WORLD_SEED = 20261006;
+    const landCells = DW.Islands.generateArchipelago(WORLD_SEED);
+    for (const [x, z] of landCells) world.build(x, z);
+    DW.Islands.markSurroundingWater(world.grid, landCells, 3);
 
     function render() { renderer.render(scene, camera); }
     function tick() { render(); requestAnimationFrame(tick); }
@@ -70,7 +75,7 @@
     // Accroche de test : pilotée par tools/smoke.js (headless), sans dépendre de requestAnimationFrame
     // ni d'événements DOM simulés pour vérifier la logique — leçon reprise de l'ancien labo.jeux
     // (rAF gelé dans certains navigateurs embarqués en mode caché).
-    window.DW_TEST = { world, orbit, camera, screenToCell, render };
+    window.DW_TEST = { world, orbit, camera, screenToCell, render, WORLD_SEED };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
