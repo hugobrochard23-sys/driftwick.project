@@ -1,0 +1,10 @@
+{
+  "name": "Driftwick",
+  "short_name": "Driftwick",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f4d9c6",
+  "theme_color": "#e3a98b",
+  "icons": []
+}

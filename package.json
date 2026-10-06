@@ -1,0 +1,18 @@
+{
+  "name": "driftwick",
+  "version": "0.1.0",
+  "description": "Driftwick — village-archipel procédural et relaxant, jouable au doigt",
+  "main": "tools/serve.js",
+  "scripts": {
+    "serve": "node tools/serve.js 8124",
+    "test:topology": "node tests/topology.test.js",
+    "test:smoke": "node tools/smoke.js"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^22.15.0",
+    "three": "^0.160.0"
+  },
+  "private": true
+}
