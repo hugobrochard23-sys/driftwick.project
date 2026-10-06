@@ -25,6 +25,20 @@
     <button id="hud-reset">Recommencer ce monde</button>
     <button id="hud-close">Fermer</button>
   </div>
+  <div id="photo-vignette" hidden></div>
+  <div id="photo-bar" hidden>
+    <input type="range" id="photo-time" min="0" max="1" step="0.01" aria-label="Heure du jour">
+    <div id="photo-filters">
+      <button data-filter="none" class="active">Aucun</button>
+      <button data-filter="sepia">Sépia</button>
+      <button data-filter="mono">N&amp;B</button>
+      <button data-filter="vignette">Vignette</button>
+    </div>
+    <div id="photo-actions">
+      <button id="photo-capture">Capturer</button>
+      <button id="photo-share" hidden>Partager</button>
+    </div>
+  </div>
 </div>
 
 <script src="assets/lib/three.min.js"></script>

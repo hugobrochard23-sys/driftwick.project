@@ -117,7 +117,10 @@
     }
 
     // Interface minimale (P5) : indice de premier lancement, réglages, recommencer, mondes (P7).
+    // Mode photo (P8) : la barre du bas et ses contrôles sont câblés juste après hud = DW.HUD.init(...).
     let photoMode = false;
+    let wasPaused = false;
+    const photoTimeInput = document.getElementById('photo-time');
     hud = DW.HUD.init({
       onReset() { world.clear(); generateWorld(currentSeed); scheduleSave(); },
       onPhotoToggle() {
@@ -125,6 +128,15 @@
         document.getElementById('hud-hint').hidden = photoMode;
         document.getElementById('hud-settings').hidden = photoMode;
         document.getElementById('hud-photo').textContent = photoMode ? '✕' : '📷';
+        document.getElementById('photo-bar').hidden = !photoMode;
+        if (photoMode) {
+          photoTimeInput.value = String(dayNight.t);
+          wasPaused = dayNight.paused;
+          dayNight.paused = true;
+        } else {
+          dayNight.paused = wasPaused;
+          document.getElementById('photo-vignette').hidden = true;
+        }
       },
       onNewWorld() {
         const base = window.prompt('Nom du nouveau monde :', 'Nouvelle île');
@@ -187,6 +199,67 @@
     applyDayNight();
 
     function render() { renderer.render(scene, camera); }
+
+    // Mode photo (P8) : curseur d'heure, filtres, capture, partage. Les filtres CSS (`#scene.filter-*`)
+    // ne sont là que pour l'aperçu à l'écran — ils n'affectent jamais le buffer WebGL lui-même, donc
+    // la capture recompose l'image dans un <canvas> 2D (qui lui supporte `ctx.filter`) pour que le
+    // fichier exporté corresponde réellement à ce que le joueur voit, vignette comprise.
+    let currentFilter = 'none';
+    photoTimeInput.addEventListener('input', () => {
+      dayNight.t = parseFloat(photoTimeInput.value);
+      applyDayNight();
+    });
+    document.getElementById('photo-filters').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      currentFilter = btn.dataset.filter;
+      for (const b of document.querySelectorAll('#photo-filters button')) b.classList.toggle('active', b === btn);
+      canvas.classList.remove('filter-sepia', 'filter-mono');
+      if (currentFilter === 'sepia') canvas.classList.add('filter-sepia');
+      if (currentFilter === 'mono') canvas.classList.add('filter-mono');
+      document.getElementById('photo-vignette').hidden = currentFilter !== 'vignette';
+    });
+
+    const CSS_FILTER = { none: 'none', sepia: 'sepia(0.75) saturate(1.2)', mono: 'grayscale(1) contrast(1.05)', vignette: 'none' };
+    function capturePhoto() {
+      render(); // garantit un buffer WebGL à jour juste avant de le lire (voir ROADMAP.md)
+      const out = document.createElement('canvas');
+      out.width = canvas.width; out.height = canvas.height;
+      const ctx = out.getContext('2d');
+      ctx.filter = CSS_FILTER[currentFilter] || 'none';
+      ctx.drawImage(canvas, 0, 0);
+      if (currentFilter === 'vignette') {
+        ctx.filter = 'none';
+        const g = ctx.createRadialGradient(
+          out.width / 2, out.height / 2, Math.min(out.width, out.height) * 0.3,
+          out.width / 2, out.height / 2, Math.max(out.width, out.height) * 0.7
+        );
+        g.addColorStop(0, 'rgba(10,8,6,0)'); g.addColorStop(1, 'rgba(10,8,6,0.55)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, out.width, out.height);
+      }
+      return out;
+    }
+    document.getElementById('photo-capture').addEventListener('click', () => {
+      const out = capturePhoto();
+      const a = document.createElement('a');
+      a.href = out.toDataURL('image/png');
+      a.download = 'driftwick-' + Date.now() + '.png';
+      a.click();
+      DW.Haptics.tick('build');
+    });
+    const shareBtn = document.getElementById('photo-share');
+    if (navigator.share && navigator.canShare) shareBtn.hidden = false;
+    shareBtn.addEventListener('click', async () => {
+      const out = capturePhoto();
+      out.toBlob(async (blob) => {
+        const file = new File([blob], 'driftwick.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Driftwick' }); } catch (e) { /* annulé par le joueur */ }
+        }
+      }, 'image/png');
+    });
+
     let lastFrame = performance.now();
     function tick() {
       const now = performance.now();

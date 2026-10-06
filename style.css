@@ -34,3 +34,28 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 #hud-panel[hidden] { display: none; }
 #hud-panel button { padding: 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: inherit; }
 #hud-panel select { padding: 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: inherit; }
+
+/* Mode photo (P8) : vignette en incrustation (aperçu seulement — recomposée à la capture, voir
+   game.js), barre du bas avec curseur d'heure, filtres, capturer/partager. */
+#photo-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(10, 8, 6, 0.55) 100%);
+}
+#photo-vignette[hidden] { display: none; }
+
+#photo-bar {
+  position: absolute; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center;
+  background: rgba(20, 15, 10, 0.55); border-radius: 14px; padding: 10px 14px; width: min(92vw, 420px);
+}
+#photo-bar[hidden] { display: none; }
+#photo-bar input[type="range"] { width: 100%; }
+#photo-filters, #photo-actions { display: flex; gap: 8px; }
+#photo-filters button, #photo-actions button {
+  flex: 1; padding: 8px; border-radius: 8px; border: none; color: #fff6ea;
+  background: rgba(255,255,255,0.15); font-size: 13px;
+}
+#photo-filters button.active { background: #e3a98b; color: #2a1a10; }
+
+#scene.filter-sepia { filter: sepia(0.75) saturate(1.2); }
+#scene.filter-mono { filter: grayscale(1) contrast(1.05); }

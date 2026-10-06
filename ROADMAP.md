@@ -63,9 +63,14 @@
 - [x] Export (téléchargement JSON) / import (lecture de fichier) d'un monde complet.
 - [x] Persistance vérifiée en conditions réelles : construction → attente de l'autosave → rechargement de la page → monde identique retrouvé (cellule construite comprise).
 
-## P8 — Mode photo
+## P8 — Mode photo (fait)
 
-- Masquer l'interface, régler l'heure/la lumière, filtre, capture, partage.
+- [x] Bascule : masque l'indice et les réglages, montre une barre dédiée (heure, filtres, capturer, partager) ; met le cycle jour/nuit en pause et restaure son état exact à la sortie.
+- [x] Curseur d'heure : pilote directement `dayNight.t`, image mise à jour immédiatement.
+- [x] Trois filtres (aucun, sépia, N&B) en aperçu CSS sur le canevas + vignette en incrustation DOM.
+- [x] Capture : recomposée dans un `<canvas>` 2D (`ctx.filter` + dégradé radial pour la vignette) — un filtre CSS n'affecte jamais le buffer WebGL lui-même, donc le fichier exporté n'aurait pas montré l'effet sans cette recomposition.
+- [x] Partage (Web Share API) si le navigateur le permet, sinon téléchargement PNG seul.
+- Vérifié visuellement (`analysis/p8_mode_photo.png`) et par script (bascule, curseur, filtre, taille d'image composite non triviale, restauration de l'état de pause à la sortie).
 
 ## P9 — Polish et optimisation mobile
 
@@ -112,3 +117,8 @@
   Trouvé en testant la persistance : `world.build()` appelé hors geste ne déclenchait aucune
   sauvegarde. Corrigé en déplaçant l'accroche dans `World` lui-même (`onEdit`), au plus près de
   la donnée qui change, pas au plus près du geste qui l'a provoquée.
+- Un filtre CSS (`filter:` sur l'élément canvas) est un effet de **compositing** appliqué par le
+  navigateur à l'affichage : il ne touche jamais aux pixels réellement stockés dans le buffer
+  WebGL. `canvas.toDataURL()` ou `drawImage(canvas,...)` appelé directement ignore donc totalement
+  un filtre CSS actif. Pour qu'une capture corresponde à l'aperçu filtré, il faut recomposer dans
+  un second `<canvas>` 2D (qui supporte `ctx.filter` en tant que propriété de dessin, pas de style).
